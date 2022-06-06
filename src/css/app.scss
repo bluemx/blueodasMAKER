@@ -1,1 +1,39 @@
 // app global css in SCSS form
+
+.q-chip--dense{
+    height: 1.1em;
+    margin: 2px;
+}
+
+.on-left{
+    margin-right: 6px;
+}
+
+
+.q-field--outlined .q-field__control{
+    padding: 0 4px;
+}
+
+.q-field--dense {
+    .q-field__control-container,
+    .q-field__native {
+      padding-top: 6px !important;
+    }
+  
+    .q-field__control {
+    height: auto;
+      min-height: 28px !important;
+    }
+  
+    .q-field__marginal {
+      height: auto !important;
+    }
+  
+    .q-field__label {
+      top: 6px !important;
+    }
+  }
+input.q-field__native{
+    padding: 0;
+    font-size: 12px;
+}

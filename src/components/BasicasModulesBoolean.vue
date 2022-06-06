@@ -1,7 +1,8 @@
 <template lang="pug">
 
 .row.justify-center.items-center.q-col-gutter-sm
-  .col: q-input( outlined dense v-model="modelValue" type="text" @update:model-value="updateModel" :label="name")
+  .col: q-checkbox(left-label :label="name" size="lg" v-model="modelValue"  @update:model-value="updateModel" )
+  //q-input( outlined dense v-model="modelValue" type="text" @update:model-value="updateModel" :label="name")
 
 </template>
 
@@ -10,7 +11,7 @@ import { ref, inject, onMounted } from "vue";
 
 const emitter = inject("EMITTER");
 const props = defineProps({
-  modelValue: [String, Number],
+  modelValue: [String, Number, Boolean],
   name: String,
 });
 const emit = defineEmits(["update:modelValue"]);

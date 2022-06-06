@@ -6,18 +6,30 @@
         .row.full-width.items-center
           .col-6 Vista previa
           .col-6.text-right
+            q-btn(unelevated flat color="purple-6" :icon="oda.structure.view?'dvr':'html'" @click="changeview" size="sm").q-mr-sm: q-tooltip Ver código
+            q-btn(unelevated flat color="purple-8" icon="devices" @click="responsiveView=!responsiveView" size="sm").q-mr-sm: q-tooltip Responsivo
             q-btn(unelevated color="purple-6" icon="las la-sync" @click="resync" size="sm").q-mr-sm: q-tooltip Actualizar
-            q-btn(unelevated flat color="purple-6" icon="las la-file-archive" @click="download"  size="sm"): q-tooltip Descargar
-      .col-grow.bg-white
-        iframe(ref="iframe" v-if="insync" style="border:none;").fit.rounded-borders
+            BasicasHTML_download(@downloading="downloading=$event" @resync="resync()" :iframe="iframe")
+            //q-btn(unelevated flat color="purple-6" icon="las la-file-archive" @click="download"  size="sm"): q-tooltip Descargar
+      .col-grow(v-show="!oda.structure.view").text-center
+        iframe(ref="iframe" v-if="insync" style="border:none;" :class="responsiveView?'responsiveView full-height q-mx-auto':'fit'").rounded-borders.bg-white
+      .col-grow.bg-white(v-show="oda.structure.view")
+            BasicasHTML_viewcode(:html-modules="htmlModules")
 
 </template>
 
 <script setup>
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
 import { ref, onMounted, inject } from "vue";
 import { useOdaBasicaStore } from "src/stores/odabasica";
+import { Json2Html } from "json-into-html";
+import BasicasHTML_viewcode from "./BasicasHTML_viewcode.vue";
+import BasicasHTML_download from "./BasicasHTML_download.vue";
+
+const currentScroll = ref(0)
+
+const responsiveView = ref(false);
+
+const htmlModules = ref("loading...");
 
 const emitter = inject("EMITTER");
 
@@ -26,16 +38,28 @@ const iDoc = ref(null);
 
 const oda = useOdaBasicaStore();
 const appcontainer = ref();
+const modulescontainer = ref();
 const insync = ref(true);
 const downloading = ref(false);
 
+const htmlbody = ref([]);
+
+const changeview = () => {
+  oda.structure.view = !oda.structure.view;
+};
+
 const resync = async () => {
+   currentScroll.value = iDoc.value.body.scrollTop
+
+  oda.buildLocations();
   insync.value = false;
 
   setTimeout(() => {
     insync.value = true;
     setTimeout(() => {
+      
       build();
+      
     }, 100);
   }, 100);
 };
@@ -43,6 +67,9 @@ const resync = async () => {
 emitter.on("updatePreview", (e) => resync());
 
 const build = () => {
+
+  htmlModules.value = Json2Html(oda.structure.data);
+
   iDoc.value = iframe.value.contentWindow.document;
 
   //-metaCharset
@@ -78,10 +105,8 @@ const build = () => {
   createTag(
     "script",
     [
-      [
-        "src",
-        "https://cdn.jsdelivr.net/gh/bluemx/blueodasv2/basicas/assets/loader.min.js",
-      ],
+      ["src", oda.structure.loader],
+      ["data-loader-version", oda.structure.loaderVersion],
       ["type", scriptloadingprevent],
     ],
     false,
@@ -119,14 +144,17 @@ const buildModules = () => {
     appcontainer.value
   );
 
+  modulescontainer.value = createTag("div", [], false, appcontainer.value);
+
   // ----------------------- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   // ----------------------- modules
-  for (var dt of oda.structure.data) {
-    let attrs = modulateAttributes(dt.data.attrs);
-    createModule(dt.data.tag, attrs, dt.data.content, appcontainer.value);
-  }
+
+  modulescontainer.value.innerHTML = htmlModules.value;
   //-OdaFinalize
   createTag("oda-finalizar", [], false, appcontainer.value);
+  setTimeout(()=>{
+    iframe.value.contentWindow.scrollTo(0, currentScroll.value)
+  }, 200)
 };
 
 // ----------------------- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -167,6 +195,8 @@ const createModule = (tag, attributes, content, appendTo) => {
       }
     });
   }
+
+  htmlbody.value.push(newTag);
   appendTo.appendChild(newTag);
   return newTag;
 };
@@ -183,36 +213,10 @@ const createModuleInside = (appendTo, item) => {
 onMounted(() => {
   build();
 });
-// ----------------------- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-// ----------------------- Download
-
-const download = () => {
-  downloading.value = true;
-  resync();
-  setTimeout(() => {
-    var zip = new JSZip();
-    var folder = zip.folder("basica");
-
-    //-HTML
-    folder.file(
-      "index.html",
-      iframe.value.contentWindow.document.documentElement.outerHTML.replace(
-        "text/test",
-        "text/javascript"
-      )
-    );
-    //-JSON
-    folder.file("oda.json", JSON.stringify(oda.structure));
-    //-IMG
-    var img = folder.folder("img");
-
-    //img.file("smile.gif", imgData, { base64: true });
-    zip.generateAsync({ type: "blob" }).then(function (content) {
-      // see FileSaver.js
-      saveAs(content, "basica.zip");
-      downloading.value = false;
-      resync();
-    });
-  }, 750);
-};
 </script>
+
+<style>
+.responsiveView {
+  width: 320px;
+}
+</style>

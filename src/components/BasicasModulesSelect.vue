@@ -2,8 +2,8 @@
 
 .row.justify-center.items-center.q-col-gutter-sm
   .col-8
-    q-select(:label="name" v-model="modelValue" outlined dense options-dense :options="options")
-  .col: q-input( outlined dense v-model="modelValue" type="text" @update:model-value="updateModel")
+    q-select(bg-color="white" :label="name" v-model="modelValue" outlined dense options-dense :options="options"  @update:model-value="updateModel")
+  .col: q-input(bg-color="white" :label="name" outlined dense v-model="modelValue" type="text" @update:model-value="updateModel")
 
 </template>
 
@@ -12,7 +12,7 @@ import { ref, inject, onMounted } from "vue";
 
 const emitter = inject("EMITTER");
 const props = defineProps({
-  modelValue: String,
+  modelValue: [String, Number, Boolean],
   name: String,
   options: Array,
 });
